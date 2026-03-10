@@ -15,7 +15,7 @@ class TestFileUploaderBot(BotTestCase, DefaultTests):
     @patch("pathlib.Path.is_file", return_value=True)
     def test_file_upload_failed(self, is_file: Mock, resolve: Mock) -> None:
         server_reply = dict(result="", msg="error")
-        with patch(
+        with self.mock_config_info({"upload_directory": "/"}), patch(
             "zulip_bots.test_lib.StubBotHandler.upload_file_from_path", return_value=server_reply
         ):
             self.verify_reply(
@@ -26,12 +26,24 @@ class TestFileUploaderBot(BotTestCase, DefaultTests):
     @patch("pathlib.Path.is_file", return_value=True)
     def test_file_upload_success(self, is_file: Mock, resolve: Mock) -> None:
         server_reply = dict(result="success", uri="https://file/uri")
-        with patch(
+        with self.mock_config_info({"upload_directory": "/"}), patch(
             "zulip_bots.test_lib.StubBotHandler.upload_file_from_path", return_value=server_reply
         ):
             self.verify_reply("file.txt", "[file.txt](https://file/uri)")
 
-    def test_help(self):
+    def test_path_traversal_rejected(self) -> None:
+        self.verify_reply(
+            "/etc/passwd",
+            "Access denied: file path must be within the configured upload directory.",
+        )
+
+    def test_home_dir_traversal_rejected(self) -> None:
+        self.verify_reply(
+            "~/.ssh/id_rsa",
+            "Access denied: file path must be within the configured upload directory.",
+        )
+
+    def test_help(self) -> None:
         self.verify_reply(
             "help",
             (

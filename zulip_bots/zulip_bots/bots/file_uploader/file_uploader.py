@@ -13,6 +13,14 @@ class FileUploaderHandler:
             "\n- @uploader help : Display help message"
         )
 
+    def initialize(self, bot_handler: AbstractBotHandler) -> None:
+        config = bot_handler.get_config_info("file_uploader", optional=True)
+        upload_dir = config.get("upload_directory") if config else None
+        if upload_dir:
+            self.upload_directory = Path(upload_dir).resolve()
+        else:
+            self.upload_directory = Path.cwd()
+
     def handle_message(self, message: Dict[str, str], bot_handler: AbstractBotHandler) -> None:
         help_str = (
             "Use this bot with any of the following commands:"
@@ -25,12 +33,22 @@ class FileUploaderHandler:
             bot_handler.send_reply(message, help_str)
             return
 
-        path = Path(os.path.expanduser(content))
+        path = Path(os.path.expanduser(content)).resolve()
+        # resolve() follows symlinks, so the relative_to check is performed on the
+        # real filesystem path, preventing symlink-based traversal attacks.
+        try:
+            path.relative_to(self.upload_directory)
+        except ValueError:
+            bot_handler.send_reply(
+                message,
+                "Access denied: file path must be within the configured upload directory.",
+            )
+            return
+
         if not path.is_file():
             bot_handler.send_reply(message, f"File `{content}` not found")
             return
 
-        path = path.resolve()
         upload = bot_handler.upload_file_from_path(str(path))
         if upload["result"] != "success":
             msg = upload["msg"]

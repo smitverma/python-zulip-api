@@ -182,8 +182,8 @@ class JiraHandler:
     def jql_search(self, jql_query: str) -> str:
         unknown_val = "*unknown*"
         jira_response = requests.get(
-            self.domain_with_protocol
-            + f"/rest/api/2/search?jql={jql_query}&fields=key,summary,status",
+            self.domain_with_protocol + "/rest/api/2/search",
+            params={"jql": jql_query, "fields": "key,summary,status"},
             headers={"Authorization": self.auth},
         ).json()
 
@@ -220,6 +220,9 @@ class JiraHandler:
             unknown_val = "*unknown*"
 
             key = get_match.group("issue_key")
+            if not re.match(r"^[A-Z][A-Z0-9]+-\d+$", key):
+                bot_handler.send_reply(message, "Invalid issue key format.")
+                return
 
             jira_response = requests.get(
                 self.domain_with_protocol + "/rest/api/2/issue/" + key,
@@ -278,6 +281,9 @@ class JiraHandler:
                 response = "Issue *" + key + "* is up! " + url
         elif edit_match and check_is_editing_something(edit_match):
             key = edit_match.group("issue_key")
+            if not re.match(r"^[A-Z][A-Z0-9]+-\d+$", key):
+                bot_handler.send_reply(message, "Invalid issue key format.")
+                return
 
             jira_response = requests.put(
                 self.domain_with_protocol + "/rest/api/2/issue/" + key,
