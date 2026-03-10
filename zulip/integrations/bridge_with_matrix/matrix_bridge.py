@@ -353,7 +353,11 @@ class ZulipToMatrix:
                 continue
 
             try:
-                with urllib.request.urlopen(self.server_url + result["url"]) as response:  # noqa: S310
+                url = result.get("url", "")
+                if not re.match(r"^/user_uploads/[\w/._-]+$", url) or ".." in url.split("/"):
+                    success = False
+                    continue
+                with urllib.request.urlopen(self.server_url + url) as response:  # noqa: S310
                     file_content: bytes = response.read()
                     mimetype: str = response.headers.get_content_type()
             except Exception:

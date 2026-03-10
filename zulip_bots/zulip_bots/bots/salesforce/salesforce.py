@@ -94,8 +94,17 @@ def query_salesforce(arg: str, salesforce: Salesforce, command: Dict[str, Any]) 
     if "query" in command:
         query = command["query"]
     object_type = object_types[command["object"]]
+    # Escape special SOQL characters to prevent injection.
+    # Backslashes must be escaped first to avoid double-escaping.
+    safe_qarg = (
+        qarg.replace("\\", "\\\\")
+        .replace("'", "\\'")
+        .replace("\n", "\\n")
+        .replace("\r", "\\r")
+        .replace("\t", "\\t")
+    )
     res = salesforce.query(
-        query.format(object_type["fields"], object_type["table"], qarg, limit_num)
+        query.format(object_type["fields"], object_type["table"], safe_qarg, limit_num)
     )
     exclude_keys: List[str] = []
     if "exclude_keys" in command:

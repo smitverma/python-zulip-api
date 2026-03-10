@@ -1,7 +1,11 @@
 {
   "request": {
-    "api_url": "http://example.atlassian.net/rest/api/2/search?jql=summary ~ TEST&fields=key,summary,status",
+    "api_url": "http://example.atlassian.net/rest/api/2/search",
     "method": "GET",
+    "params": {
+      "jql": "summary ~ TEST",
+      "fields": "key,summary,status"
+    },
     "headers": {
       "Authorization": "Basic ZXhhbXBsZUBleGFtcGxlLmNvbTpxd2VydHkhMTIz"
     }
